@@ -12,3 +12,9 @@ timeskew.dll: timeskew.cpp detours.lib
 
 timeskew.exe: withdll.cpp detours.lib
     cl /nologo /MT /W4 /O2 /I$(SRCD) /Fe$@ $**
+
+clean:
+	del *.exp *.obj *.lib
+
+destroy: clean
+	del *.exe *.dll
