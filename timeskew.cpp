@@ -16,7 +16,7 @@
 typedef unsigned __int64 QWORD;
 
 // TODO: mitigate risk of overflow when multiplying by num or by denom
-static DWORD num = 10;
+static DWORD num = 1;
 static DWORD denom = 1;
 
 // TODO: GetTimeSysInfoFunc
