@@ -171,6 +171,7 @@ DWORD WINAPI server(LPVOID lpParam) {
                 int newNum, newDenom;
                 res = _snscanf_s(recvbuf, res, "%d %d", &newNum, &newDenom);
                 if (res == 2) {
+                    log("setting timeskew to %d %d", newNum, newDenom);
                     num = newNum;
                     denom = newDenom;
                 } else {
