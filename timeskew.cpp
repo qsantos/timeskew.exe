@@ -7,6 +7,8 @@
 #pragma comment(lib, "user32.lib")
 
 #include <stdio.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #include <windows.h>
 
 #include "detours.h"
@@ -74,6 +76,87 @@ void log(const char* format, ...) {
 #endif
 }
 #define log(...)
+
+DWORD WINAPI server(LPVOID lpParam) {
+    (void) lpParam;
+
+    log("Starting timeskew server");
+    // Windows requires initializing before using sockets
+    WSADATA wsaData;
+    int res = WSAStartup(MAKEWORD(2,2), &wsaData);
+    if (res != 0) {
+        log("WSAStartup failed with error: %d\n", res);
+        exit(1);
+    }
+    // Get address
+    struct addrinfo *addrinfo;
+    res = getaddrinfo("127.0.0.1", "40000", NULL, &addrinfo);
+    if (res != 0) {
+        log("getaddrinfo() failed with error: %d\n", res);
+        exit(1);
+    }
+    // Create socket
+    SOCKET listeningSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (listeningSocket == INVALID_SOCKET) {
+        log("socket() failed with error: %ld\n", WSAGetLastError());
+        exit(1);
+    }
+    // Bind socket
+    res = bind(listeningSocket, addrinfo->ai_addr, (int) addrinfo->ai_addrlen);
+    if (res == SOCKET_ERROR) {
+        log("bind failed with error: %d\n", WSAGetLastError());
+        exit(1);
+    }
+    freeaddrinfo(addrinfo);
+    // Start listening
+    res = listen(listeningSocket, SOMAXCONN);
+    if (res == SOCKET_ERROR) {
+        log("listen() failed with error: %d\n", WSAGetLastError());
+        exit(1);
+    }
+    // Main loop
+    SOCKET clientSockets[FD_SETSIZE];
+    int nClients = 0;
+    fd_set readfdsInput, readfds;
+    FD_SET(listeningSocket, &readfdsInput);
+    while (true) {
+        readfds = readfdsInput;
+        select(nClients + 1, &readfds, NULL, NULL, NULL);
+        if (FD_ISSET(listeningSocket, &readfds)) {
+            // Accept a client socket
+            SOCKET sock = accept(listeningSocket, NULL, NULL);
+            if (sock == INVALID_SOCKET) {
+                log("accept() failed with error: %d\n", WSAGetLastError());
+                closesocket(sock);
+            } else {
+                clientSockets[nClients] = sock;
+                nClients += 1;
+                FD_SET(sock, &readfdsInput);
+            }
+        }
+        for (int i = 0; i < nClients; i++) {
+            if (FD_ISSET(clientSockets[i], &readfds)) {
+                // Receive data
+                char recvbuf[100];
+                res = recv(clientSockets[i], recvbuf, sizeof recvbuf - 1, 0);
+                if (res < 0) {
+                    // Close socket
+                    FD_CLR(clientSockets[i], &readfdsInput);
+                    closesocket(clientSockets[i]);
+                    // Swap and pop
+                    nClients -= 1;
+                    clientSockets[i] = clientSockets[nClients];
+                    // Play this loop iteration to account for the removed item
+                    i -= 1; // NOTE: i is signed
+                    continue;
+                }
+                // NOTE: 0 <= res < sizeof recvbuf
+                recvbuf[res] = 0;
+                printf("%s\n", recvbuf);
+            }
+        }
+    }
+}
 
 int SkewedSelect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, const timeval *timeout) {
     timeval *timeout2;
@@ -414,6 +497,10 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD dwReason, LPVOID reserved) {
     }
 
     if (dwReason == DLL_PROCESS_ATTACH) {
+        if (CreateThread(NULL, 1 << 20, server, NULL, 0, NULL) == NULL) {
+            log("Failed to create server thread");
+            exit(1);
+        }
         DetourRestoreAfterWith();
         DetourTransactionBegin();
         DetourUpdateThread(GetCurrentThread());
