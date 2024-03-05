@@ -68,7 +68,7 @@ void log(const char* format, ...) {
     }
     va_start(ap, format);
     vfprintf(f, format, ap);
-    vfprintf(f, "\n");
+    fprintf(f, "\n");
     va_end(ap);
     fclose(f);
 #else
