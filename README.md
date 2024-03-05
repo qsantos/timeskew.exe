@@ -24,3 +24,14 @@ It will do so at a faster pace, since the period is correspondingly shortened.
 
 If you do not have Python installed, you can use the Batch and PowerShell test scripts instead.
 Instead of Nmap/Ncat, you can use telnet, although it is not installed on Windows by default.
+
+## How it works
+
+This project uses [Detours](https://github.com/microsoft/Detours/),
+which is similar to `LD_PRELOAD` on the (at least for the WINAPI).
+To see how _this_ works, look at the [corresponding documentation](https://github.com/microsoft/Detours/wiki/OverviewInterception).
+
+`timeskew.exe` uses Detours to intercepts calls to all WINAPI functions that involve time (that I know of).
+To simulation the acceleration of time,
+inputs (e.g. for `Sleep`) are reduced proportionally,
+while outputs are increased proportionally (for instance `GetSystemTime`).
