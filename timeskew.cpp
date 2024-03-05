@@ -18,6 +18,7 @@ static DWORD num = 10;
 static DWORD denom = 1;
 
 // TODO: GetTimeSysInfoFunc
+static int(*TrueSelect)(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, const timeval *timeout) = select;
 static void(WINAPI* TrueSleep)(DWORD dwMilliseconds) = Sleep;
 static DWORD(WINAPI* TrueSleepEx)(DWORD dwMilliseconds, BOOL bAlertable) = SleepEx;
 static void(WINAPI* TrueGetSystemTime)(LPSYSTEMTIME lpSystemTime) = GetSystemTime;
@@ -73,6 +74,22 @@ void log(const char* format, ...) {
 #endif
 }
 #define log(...)
+
+int SkewedSelect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, const timeval *timeout) {
+    timeval *timeout2;
+    if (timeout == NULL) {
+        timeout2 = NULL;
+    } else {
+        static const ULONGLONG usecs_per_sec = 1000000ULL;
+        timeval skewedTimeout;
+        ULONGLONG usecs = timeout->tv_sec * usecs_per_sec + timeout->tv_usec;
+        usecs = usecs * denom / num;
+        skewedTimeout.tv_sec = (LONG) (usecs / usecs_per_sec);
+        skewedTimeout.tv_usec = (LONG) (usecs % usecs_per_sec);
+        timeout2 = &skewedTimeout;
+    }
+    return TrueSelect(nfds, readfds, writefds, exceptfds, timeout2);
+}
 
 void SkewedSleep(DWORD dwMilliseconds) {
     log("SkewedSleep");
@@ -400,6 +417,7 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD dwReason, LPVOID reserved) {
         DetourRestoreAfterWith();
         DetourTransactionBegin();
         DetourUpdateThread(GetCurrentThread());
+        DetourAttach(&(PVOID&)TrueSelect, SkewedSelect);
         DetourAttach(&(PVOID&)TrueSleep, SkewedSleep);
         DetourAttach(&(PVOID&)TrueSleepEx, SkewedSleepEx);
         DetourAttach(&(PVOID&)TrueGetSystemTime, SkewedGetSystemTime);
@@ -452,6 +470,7 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD dwReason, LPVOID reserved) {
         DetourDetach(&(PVOID&)TrueGetSystemTime, SkewedGetSystemTime);
         DetourDetach(&(PVOID&)TrueSleepEx, SkewedSleepEx);
         DetourDetach(&(PVOID&)TrueSleep, SkewedSleep);
+        DetourDetach(&(PVOID&)TrueSelect, SkewedSelect);
         DetourTransactionCommit();
     }
     return TRUE;
