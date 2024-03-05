@@ -79,18 +79,33 @@ void log(const char* format, ...) {
 
 DWORD WINAPI server(LPVOID lpParam) {
     (void) lpParam;
-
-    log("Starting timeskew server");
+    int res;
+    // Read port from environment variable
+    char buf[30];
+    const char *port;
+    res = GetEnvironmentVariable("TIMESKEW_PORT", buf, sizeof buf);
+    if (res >= sizeof buf) {
+        log("The value in TIMESKEW_PORT envvar is too long");
+        exit(1);
+    } else if (res > 0) {
+        port = buf;
+    } else if (GetLastError() == ERROR_ENVVAR_NOT_FOUND) {
+        port = "40000";
+    } else {
+        log("Failed to read TIMESKEW_PORT envvar");
+        exit(1);
+    }
+    log("Starting timeskew server on port %s", port);
     // Windows requires initializing before using sockets
     WSADATA wsaData;
-    int res = WSAStartup(MAKEWORD(2,2), &wsaData);
+    res = WSAStartup(MAKEWORD(2,2), &wsaData);
     if (res != 0) {
         log("WSAStartup failed with error: %d\n", res);
         exit(1);
     }
     // Get address
     struct addrinfo *addrinfo;
-    res = getaddrinfo("127.0.0.1", "40000", NULL, &addrinfo);
+    res = getaddrinfo("127.0.0.1", port, NULL, &addrinfo);
     if (res != 0) {
         log("getaddrinfo() failed with error: %d\n", res);
         exit(1);
