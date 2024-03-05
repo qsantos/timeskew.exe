@@ -117,10 +117,11 @@ DWORD WINAPI server(LPVOID lpParam) {
     // Main loop
     SOCKET clientSockets[FD_SETSIZE];
     int nClients = 0;
-    fd_set readfdsInput, readfds;
+    fd_set readfdsInput;
+    FD_ZERO(&readfdsInput);
     FD_SET(listeningSocket, &readfdsInput);
     while (true) {
-        readfds = readfdsInput;
+        fd_set readfds = readfdsInput;
         select(nClients + 1, &readfds, NULL, NULL, NULL);
         if (FD_ISSET(listeningSocket, &readfds)) {
             // Accept a client socket
