@@ -153,7 +153,14 @@ DWORD WINAPI server(LPVOID lpParam) {
                 }
                 // NOTE: 0 <= res < sizeof recvbuf
                 recvbuf[res] = 0;
-                printf("%s\n", recvbuf);
+                int newNum, newDenom;
+                res = _snscanf_s(recvbuf, res, "%d %d", &newNum, &newDenom);
+                if (res == 2) {
+                    num = newNum;
+                    denom = newDenom;
+                } else {
+                    log("failed to parse '%s'", recvbuf);
+                }
             }
         }
     }
