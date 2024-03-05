@@ -53,29 +53,46 @@ HANDLE ghMutex;
 static QWORD lastTrueDateTime = 0;
 static QWORD lastSkewedDateTime = 0;
 
+FILE *logfile = NULL;
+
 void log(const char* format, ...) {
-#if 0
-    va_list ap;
-    va_start(ap, format);
-    vprintf(format, ap);
-    printf("\n");
-    va_end(ap);
-#elif 0
-    va_list ap;
-    FILE* f = NULL;
-    if (fopen_s(&f, "C:\\Users\\Quentin\\skewed.log", "a") != 0) {
+    if (!logfile) {
         return;
     }
+    // NOTE: using line buffering (non-"b" mode) should keep *most* logs unmangled
+    va_list ap;
     va_start(ap, format);
-    vfprintf(f, format, ap);
-    fprintf(f, "\n");
+    vfprintf(logfile, format, ap);
     va_end(ap);
-    fclose(f);
-#else
-    (void) format;
-#endif
+    fprintf(logfile, "\n");
+    fflush(logfile);
 }
-#define log(...)
+
+void open_logfile() {
+    char buf[MAX_PATH];
+    int res = GetEnvironmentVariable("TIMESKEW_LOGFILE", buf, sizeof buf);
+    if (res >= sizeof buf) {
+        fprintf(stderr, "The value in TIMESKEW_LOGFILE envvar is too long");
+        exit(1);
+    } else if (res > 0) {
+        if (strcmp(buf, "-") == 0) {
+            logfile = stdout;
+            log("Using standard output for logging");
+        } else {
+            if (fopen_s(&logfile, buf, "a") != 0) {
+                fprintf(stderr, "Failed to open '%s' for logging", buf);
+                exit(1);
+            }
+            fprintf(stderr, "Using '%s' for logging", buf);
+            log("Using '%s' for logging", buf);
+        }
+    } else if (GetLastError() == ERROR_ENVVAR_NOT_FOUND) {
+        // nothing to do
+    } else {
+        fprintf(stderr, "Failed to read TIMESKEW_LOGFILE envvar");
+        exit(1);
+    }
+}
 
 DWORD WINAPI server(LPVOID lpParam) {
     (void) lpParam;
@@ -514,12 +531,16 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD dwReason, LPVOID reserved) {
         return TRUE;
     }
 
+    open_logfile();
+
+    // Create Mutex
     ghMutex = CreateMutex(NULL, FALSE, NULL);
     if (ghMutex == NULL) {
         fprintf(stderr, "CreateMutex error: %ld\n", GetLastError());
         return 1;
     }
 
+    // Replace/restore time-related functions
     if (dwReason == DLL_PROCESS_ATTACH) {
         if (CreateThread(NULL, 1 << 20, server, NULL, 0, NULL) == NULL) {
             log("Failed to create server thread");
