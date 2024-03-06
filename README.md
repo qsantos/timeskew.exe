@@ -45,6 +45,30 @@ Then, assuming Nmap is installed, run:
 
 Instead of Nmap/Ncat, you can use telnet, although it is not installed on Windows by default anymore.
 
+## How to build
+
+First, clone the repository and its dependencies:
+
+```
+> git clone --recursive https://github.com/qsantos/timeskew.exe
+```
+
+**Note:**
+If you forget the `--recursive` option when cloning the repository, use `git submodule --init --recursive`
+
+Then, you will need to install
+[the installer for the Visual Studio build tools](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022),
+and use it to install:
+
+- “Desktop development with C++”, with the optional “MSVC” and “Windows 11 SDK”
+- “.NET desktop development”
+
+Once this is done, open the “Developer Command Prompt” or “Developer PowerShell”, navigate to the repository, and run:
+
+```
+> nmake
+```
+
 ## How it works
 
 This project uses [Detours](https://github.com/microsoft/Detours/),
