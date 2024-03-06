@@ -69,6 +69,9 @@ void log(const char* format, ...) {
 }
 
 void open_logfile() {
+    if (logfile) {
+        return;
+    }
     char buf[MAX_PATH];
     int res = GetEnvironmentVariable("TIMESKEW_LOGFILE", buf, sizeof buf);
     if (res >= sizeof buf) {
