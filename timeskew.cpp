@@ -547,9 +547,6 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD dwReason, LPVOID reserved) {
         return TRUE;
     }
 
-    init_logging();
-    init_timeskew();
-
     // Create Mutex
     ghMutex = CreateMutex(NULL, FALSE, NULL);
     if (ghMutex == NULL) {
@@ -559,6 +556,9 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD dwReason, LPVOID reserved) {
 
     // Replace/restore time-related functions
     if (dwReason == DLL_PROCESS_ATTACH) {
+        init_logging();
+        init_timeskew();
+
         if (CreateThread(NULL, 1 << 20, server, NULL, 0, NULL) == NULL) {
             log("Failed to create server thread");
             exit(1);
