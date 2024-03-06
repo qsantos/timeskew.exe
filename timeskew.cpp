@@ -83,7 +83,7 @@ bool read_envvar(const char* envvar, char* buf, DWORD n) {
     }
 }
 
-void open_logfile() {
+void init_logging() {
     if (logfile) {
         return;
     }
@@ -547,7 +547,7 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD dwReason, LPVOID reserved) {
         return TRUE;
     }
 
-    open_logfile();
+    init_logging();
     init_timeskew();
 
     // Create Mutex
