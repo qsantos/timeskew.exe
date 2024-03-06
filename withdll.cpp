@@ -1,8 +1,8 @@
 //  Microsoft Research Detours Package
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
+#include <windows.h>
 #include <stdio.h>
 #include <strsafe.h>
-#include <windows.h>
 
 #include <detours.h>
 
