@@ -106,6 +106,18 @@ void open_logfile() {
     }
 }
 
+void parse_timeskew(const char* s) {
+    int newNum, newDenom;
+    int res = sscanf_s(s, "%d %d", &newNum, &newDenom);
+    if (res == 2) {
+        log("setting timeskew to %d %d", newNum, newDenom);
+        num = newNum;
+        denom = newDenom;
+    } else {
+        log("failed to parse '%s'", s);
+    }
+}
+
 DWORD WINAPI server(LPVOID lpParam) {
     (void) lpParam;
     int res;
@@ -190,15 +202,7 @@ DWORD WINAPI server(LPVOID lpParam) {
                 }
                 // NOTE: 0 <= res < sizeof recvbuf
                 recvbuf[res] = 0;
-                int newNum, newDenom;
-                res = _snscanf_s(recvbuf, res, "%d %d", &newNum, &newDenom);
-                if (res == 2) {
-                    log("setting timeskew to %d %d", newNum, newDenom);
-                    num = newNum;
-                    denom = newDenom;
-                } else {
-                    log("failed to parse '%s'", recvbuf);
-                }
+                parse_timeskew(recvbuf);
             }
         }
     }
