@@ -23,34 +23,34 @@ static BOOL CALLBACK ExportCallback(_In_opt_ PVOID pContext, _In_ ULONG nOrdinal
 }
 
 int CDECL main(int argc, char **argv) {
-	// Find timeskew.dll
-	CHAR dllPath[MAX_PATH];
-	CHAR *end = dllPath + GetModuleFileNameA(NULL, dllPath, MAX_PATH);
-	while (*end != '\\') {
-		end -= 1;
-	}
-	end += 1;
+    // Find timeskew.dll
+    CHAR dllPath[MAX_PATH];
+    CHAR *end = dllPath + GetModuleFileNameA(NULL, dllPath, MAX_PATH);
+    while (*end != '\\') {
+        end -= 1;
+    }
+    end += 1;
     memcpy(end, "timeskew.dll", 13);
 
-	// Load timeskew.dll
-	HMODULE hDll = LoadLibraryExA(dllPath, NULL, DONT_RESOLVE_DLL_REFERENCES);
-	if (hDll == NULL) {
-		printf("withdll.exe: Error: %s failed to load (error %ld).\n", dllPath, GetLastError());
-		return 9003;
-	}
-	ExportContext ec;
-	ec.fHasOrdinal1 = FALSE;
-	ec.nExports = 0;
-	DetourEnumerateExports(hDll, &ec, ExportCallback);
-	FreeLibrary(hDll);
-	if (!ec.fHasOrdinal1) {
-		printf("withdll.exe: Error: %s does not export ordinal #1.\n", dllPath);
-		printf("             See help entry DetourCreateProcessWithDllEx in Detours.chm.\n");
-		return 9004;
-	}
+    // Load timeskew.dll
+    HMODULE hDll = LoadLibraryExA(dllPath, NULL, DONT_RESOLVE_DLL_REFERENCES);
+    if (hDll == NULL) {
+        printf("withdll.exe: Error: %s failed to load (error %ld).\n", dllPath, GetLastError());
+        return 9003;
+    }
+    ExportContext ec;
+    ec.fHasOrdinal1 = FALSE;
+    ec.nExports = 0;
+    DetourEnumerateExports(hDll, &ec, ExportCallback);
+    FreeLibrary(hDll);
+    if (!ec.fHasOrdinal1) {
+        printf("withdll.exe: Error: %s does not export ordinal #1.\n", dllPath);
+        printf("             See help entry DetourCreateProcessWithDllEx in Detours.chm.\n");
+        return 9004;
+    }
 
-	// Read command
-	int arg = 1;
+    // Read command
+    int arg = 1;
     CHAR szExe[1024];
     CHAR szCommand[2048] = "\0";
     StringCchCopyA(szExe, sizeof(szExe), argv[arg]);
@@ -67,7 +67,7 @@ int CDECL main(int argc, char **argv) {
         if (arg + 1 < argc) {
             StringCchCatA(szCommand, sizeof(szCommand), " ");
         }
-		arg++;
+        arg++;
     }
 
     // Create process
@@ -96,11 +96,11 @@ int CDECL main(int argc, char **argv) {
         ExitProcess(9009);
     }
 
-	// Run process
+    // Run process
     ResumeThread(pi.hThread);
     WaitForSingleObject(pi.hProcess, INFINITE);
 
-	// Propagate exit code
+    // Propagate exit code
     DWORD dwResult = 0;
     if (!GetExitCodeProcess(pi.hProcess, &dwResult)) {
         printf("withdll.exe: GetExitCodeProcess failed: %ld\n", GetLastError());
