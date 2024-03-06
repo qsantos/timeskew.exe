@@ -23,6 +23,12 @@ static BOOL CALLBACK ExportCallback(_In_opt_ PVOID pContext, _In_ ULONG nOrdinal
 }
 
 int CDECL main(int argc, char **argv) {
+    if (argc <= 1) {
+        puts("Usage: timeskew.exe COMMAND...");
+        puts("Allow changing the speed of time for a given command");
+        return 1;
+    }
+
     // Find timeskew.dll
     CHAR dllPath[MAX_PATH];
     CHAR *end = dllPath + GetModuleFileNameA(NULL, dllPath, MAX_PATH);
