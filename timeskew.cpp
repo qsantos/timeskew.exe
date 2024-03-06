@@ -118,6 +118,13 @@ void parse_timeskew(const char* s) {
     }
 }
 
+void init_timeskew() {
+    char buf[255];
+    if (read_envvar("TIMESKEW", buf, sizeof buf)) {
+        parse_timeskew(buf);
+    }
+}
+
 DWORD WINAPI server(LPVOID lpParam) {
     (void) lpParam;
     int res;
@@ -541,6 +548,7 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD dwReason, LPVOID reserved) {
     }
 
     open_logfile();
+    init_timeskew();
 
     // Create Mutex
     ghMutex = CreateMutex(NULL, FALSE, NULL);
