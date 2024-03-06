@@ -68,32 +68,41 @@ void log(const char* format, ...) {
     fflush(logfile);
 }
 
+bool read_envvar(const char* envvar, char* buf, DWORD n) {
+    int res = GetEnvironmentVariable(envvar, buf, n);
+    if (res >= sizeof buf) {
+        log("The value in %s envvar is too long", envvar);
+        exit(1);
+    } else if (res > 0) {
+        return TRUE;
+    } else if (GetLastError() == ERROR_ENVVAR_NOT_FOUND) {
+        return FALSE;
+    } else {
+        log("Failed to read %s envvar", envvar);
+        exit(1);
+    }
+}
+
 void open_logfile() {
     if (logfile) {
         return;
     }
     char buf[MAX_PATH];
-    int res = GetEnvironmentVariable("TIMESKEW_LOGFILE", buf, sizeof buf);
-    if (res >= sizeof buf) {
-        fprintf(stderr, "The value in TIMESKEW_LOGFILE envvar is too long");
-        exit(1);
-    } else if (res > 0) {
-        if (strcmp(buf, "-") == 0) {
-            logfile = stdout;
-            log("Using standard output for logging");
-        } else {
-            if (fopen_s(&logfile, buf, "a") != 0) {
-                fprintf(stderr, "Failed to open '%s' for logging", buf);
-                exit(1);
-            }
-            fprintf(stderr, "Using '%s' for logging", buf);
-            log("Using '%s' for logging", buf);
-        }
-    } else if (GetLastError() == ERROR_ENVVAR_NOT_FOUND) {
-        // nothing to do
+    // if anything happens while reading the envvar, just use stderr
+    logfile = stderr;
+    if (!read_envvar("TIMESKEW_LOGFILE", buf, sizeof buf)) {
+        logfile = NULL;
+        return;
+    }
+    if (strcmp(buf, "-") == 0) {
+        logfile = stdout;
+        log("Using standard output for logging");
     } else {
-        fprintf(stderr, "Failed to read TIMESKEW_LOGFILE envvar");
-        exit(1);
+        if (fopen_s(&logfile, buf, "a") != 0) {
+            log("Failed to open '%s' for logging", buf);
+            exit(1);
+        }
+        log("Using '%s' for logging", buf);
     }
 }
 
@@ -103,17 +112,10 @@ DWORD WINAPI server(LPVOID lpParam) {
     // Read port from environment variable
     char buf[30];
     const char *port;
-    res = GetEnvironmentVariable("TIMESKEW_PORT", buf, sizeof buf);
-    if (res >= sizeof buf) {
-        log("The value in TIMESKEW_PORT envvar is too long");
-        exit(1);
-    } else if (res > 0) {
+    if (read_envvar("TIMESKEW_PORT", buf, sizeof buf)) {
         port = buf;
-    } else if (GetLastError() == ERROR_ENVVAR_NOT_FOUND) {
-        port = "40000";
     } else {
-        log("Failed to read TIMESKEW_PORT envvar");
-        exit(1);
+        port = "40000";
     }
     log("Starting timeskew server on port %s", port);
     // Windows requires initializing before using sockets
