@@ -125,18 +125,12 @@ void init_timeskew() {
     }
 }
 
+char server_port[30];
 DWORD WINAPI server(LPVOID lpParam) {
     (void) lpParam;
     int res;
     // Read port from environment variable
-    char buf[30];
-    const char *port;
-    if (read_envvar("TIMESKEW_PORT", buf, sizeof buf)) {
-        port = buf;
-    } else {
-        port = "40000";
-    }
-    log("Starting timeskew server on port %s", port);
+    log("Starting timeskew server on port %s", server_port);
     // Windows requires initializing before using sockets
     WSADATA wsaData;
     res = WSAStartup(MAKEWORD(2,2), &wsaData);
@@ -146,7 +140,7 @@ DWORD WINAPI server(LPVOID lpParam) {
     }
     // Get address
     struct addrinfo *addrinfo;
-    res = getaddrinfo("127.0.0.1", port, NULL, &addrinfo);
+    res = getaddrinfo("127.0.0.1", server_port, NULL, &addrinfo);
     if (res != 0) {
         log("getaddrinfo() failed with error: %d\n", res);
         exit(1);
@@ -212,6 +206,16 @@ DWORD WINAPI server(LPVOID lpParam) {
                 parse_timeskew(recvbuf);
             }
         }
+    }
+}
+
+void init_server() {
+    if (!read_envvar("TIMESKEW_PORT", server_port, sizeof server_port)) {
+        return;
+    }
+    if (CreateThread(NULL, 1 << 20, server, NULL, 0, NULL) == NULL) {
+        log("Failed to create server thread");
+        exit(1);
     }
 }
 
@@ -558,11 +562,8 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD dwReason, LPVOID reserved) {
     if (dwReason == DLL_PROCESS_ATTACH) {
         init_logging();
         init_timeskew();
+        init_server();
 
-        if (CreateThread(NULL, 1 << 20, server, NULL, 0, NULL) == NULL) {
-            log("Failed to create server thread");
-            exit(1);
-        }
         DetourRestoreAfterWith();
         DetourTransactionBegin();
         DetourUpdateThread(GetCurrentThread());
