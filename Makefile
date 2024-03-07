@@ -1,6 +1,6 @@
 SRCD = Detours\src
 
-all: timeskew.dll timeskew.exe
+all: timeskew.zip
 
 # NOTE: nmake does not support parallelization of targets; instead, we use cl's /MP flag
 detours.lib: $(SRCD)\detours.cpp $(SRCD)\modules.cpp $(SRCD)\disasm.cpp $(SRCD)\creatwth.cpp
@@ -12,6 +12,9 @@ timeskew.dll: timeskew.cpp detours.lib
 
 timeskew.exe: withdll.cpp detours.lib
     cl /nologo /MT /W4 /O2 /I$(SRCD) /Fe$@ $**
+
+timeskew.zip: timeskew.exe timeskew.dll
+	tar.exe -a -c -f $@ $**
 
 clean:
 	del *.exp *.obj *.lib
