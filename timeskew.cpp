@@ -368,7 +368,6 @@ BOOL SkewedSetWaitableTimer(HANDLE hTimer, const LARGE_INTEGER* lpDueTime, LONG 
 
 BOOL SkewedSetWaitableTimerEx(HANDLE hTimer, const LARGE_INTEGER* lpDueTime, LONG lPeriod, PTIMERAPCROUTINE pfnCompletionRoutine, LPVOID lpArgToCompletionRoutine, PREASON_CONTEXT WakeContext, ULONG TolerableDelay) {
     log("SkewedSetWaitableTimerEx(%lld, %ld)", lpDueTime->QuadPart, lPeriod);
-    WaitForSingleObject(ghMutex, INFINITE);
     LARGE_INTEGER lpSkewedDueTime;
     if (lpDueTime->QuadPart >= 0) {
         // TODO: using lastSkewedDateTime without updating it might not be very reliable
@@ -379,7 +378,6 @@ BOOL SkewedSetWaitableTimerEx(HANDLE hTimer, const LARGE_INTEGER* lpDueTime, LON
         // relative time
         lpSkewedDueTime.QuadPart = lpDueTime->QuadPart * denom / num;
     }
-    ReleaseMutex(ghMutex);
     log("TrueSetWaitableTimerEx(%lld)", lpSkewedDueTime.QuadPart);
     return TrueSetWaitableTimerEx(hTimer, &lpSkewedDueTime, lPeriod * denom / num, pfnCompletionRoutine, lpArgToCompletionRoutine, WakeContext, TolerableDelay);
 }
