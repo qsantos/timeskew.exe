@@ -247,11 +247,11 @@ DWORD WINAPI SkewedSleepEx(DWORD dwMilliseconds, BOOL bAlertable) {
 
 void SkewedGetSystemTime(LPSYSTEMTIME lpSystemTime) {
     log("SkewedGetSystemTime");
-    WaitForSingleObject(ghMutex, INFINITE);
     TrueGetSystemTime(lpSystemTime);
     FILETIME fileTime;
     SystemTimeToFileTime(lpSystemTime, &fileTime);
     QWORD dateTime = fileTime.dwHighDateTime * (1ULL << 32) + fileTime.dwLowDateTime;
+    WaitForSingleObject(ghMutex, INFINITE);
     if (lastTrueDateTime == 0) {
         lastTrueDateTime = dateTime;
         lastSkewedDateTime = dateTime;
@@ -263,17 +263,17 @@ void SkewedGetSystemTime(LPSYSTEMTIME lpSystemTime) {
         fileTime.dwLowDateTime = (DWORD) dateTime;
         fileTime.dwHighDateTime = dateTime >> 32;
     }
-    FileTimeToSystemTime(&fileTime, lpSystemTime);
     ReleaseMutex(ghMutex);
+    FileTimeToSystemTime(&fileTime, lpSystemTime);
 }
 
 void SkewedGetLocalTime(LPSYSTEMTIME lpSystemTime) {
     log("SkewedGetLocalTime");
-    WaitForSingleObject(ghMutex, INFINITE);
     // NOTE: FileTime is based on UTC, but, hopefully, that still works for our purposes
     TrueGetLocalTime(lpSystemTime);
     FILETIME fileTime;
     SystemTimeToFileTime(lpSystemTime, &fileTime);
+    WaitForSingleObject(ghMutex, INFINITE);
     static QWORD lastLocalTrueDateTime = 0;
     static QWORD lastLocalSkewedDateTime = 0;
     QWORD dateTime = fileTime.dwHighDateTime * (1ULL << 32) + fileTime.dwLowDateTime;
@@ -288,16 +288,16 @@ void SkewedGetLocalTime(LPSYSTEMTIME lpSystemTime) {
         fileTime.dwLowDateTime = (DWORD)dateTime;
         fileTime.dwHighDateTime = dateTime >> 32;
     }
-    FileTimeToSystemTime(&fileTime, lpSystemTime);
     ReleaseMutex(ghMutex);
+    FileTimeToSystemTime(&fileTime, lpSystemTime);
 }
 
 
 void SkewedGetSystemTimeAsFileTime(LPFILETIME lpSystemTimeAsFileTime) {
     log("SkewedGetSystemTimeAsFileTime");
-    WaitForSingleObject(ghMutex, INFINITE);
     TrueGetSystemTimeAsFileTime(lpSystemTimeAsFileTime);
     QWORD dateTime = lpSystemTimeAsFileTime->dwHighDateTime * (1ULL << 32) + lpSystemTimeAsFileTime->dwLowDateTime;
+    WaitForSingleObject(ghMutex, INFINITE);
     if (lastTrueDateTime == 0) {
         lastTrueDateTime = dateTime;
         lastSkewedDateTime = dateTime;
@@ -408,8 +408,8 @@ DWORD SkewedWaitForInputIdle(HANDLE hProcess, DWORD dwMilliseconds) {
 
 DWORD SkewedGetTickCount() {
     log("SkewedGetTickCount");
-    WaitForSingleObject(ghMutex, INFINITE);
     DWORD tickCount = TrueGetTickCount();
+    WaitForSingleObject(ghMutex, INFINITE);
     static DWORD lastTrueTickCount= 0;
     static DWORD lastSkewedTickCount = 0;
     if (lastTrueTickCount == 0) {
@@ -427,8 +427,8 @@ DWORD SkewedGetTickCount() {
 
 ULONGLONG SkewedGetTickCount64() {
     log("SkewedGetTickCount64");
-    WaitForSingleObject(ghMutex, INFINITE);
     ULONGLONG tickCount = TrueGetTickCount64();
+    WaitForSingleObject(ghMutex, INFINITE);
     static ULONGLONG lastTrueTickCount = 0;
     static ULONGLONG lastSkewedTickCount = 0;
     if (lastTrueTickCount == 0) {
@@ -446,12 +446,11 @@ ULONGLONG SkewedGetTickCount64() {
 
 BOOL SkewedQueryPerformanceCounter(LARGE_INTEGER* lpPerformanceCount) {
     log("SkewedQueryPerformanceCounter");
-    WaitForSingleObject(ghMutex, INFINITE);
     BOOL ret = TrueQueryPerformanceCounter(lpPerformanceCount);
     if (ret == 0) {
-        ReleaseMutex(ghMutex);
         return ret;
     }
+    WaitForSingleObject(ghMutex, INFINITE);
     static LONGLONG lastTrue = 0;
     static LONGLONG lastSkewed = 0;
     if (lastTrue == 0) {
@@ -469,8 +468,8 @@ BOOL SkewedQueryPerformanceCounter(LARGE_INTEGER* lpPerformanceCount) {
 
 void SkewedQueryInterruptTime(PULONGLONG lpInterruptTime) {
     log("SkewedQueryInterruptTime");
-    WaitForSingleObject(ghMutex, INFINITE);
     TrueQueryInterruptTime(lpInterruptTime);
+    WaitForSingleObject(ghMutex, INFINITE);
     static ULONGLONG lastTrue = 0;
     static ULONGLONG lastSkewed = 0;
     if (lastTrue == 0) {
@@ -487,8 +486,8 @@ void SkewedQueryInterruptTime(PULONGLONG lpInterruptTime) {
 
 void SkewedQueryInterruptTimePrecise(PULONGLONG lpInterruptTimePrecise) {
     log("SkewedQueryInterruptTimePrecise");
-    WaitForSingleObject(ghMutex, INFINITE);
     TrueQueryInterruptTimePrecise(lpInterruptTimePrecise);
+    WaitForSingleObject(ghMutex, INFINITE);
     static ULONGLONG lastTrue = 0;
     static ULONGLONG lastSkewed = 0;
     if (lastTrue == 0) {
@@ -505,12 +504,11 @@ void SkewedQueryInterruptTimePrecise(PULONGLONG lpInterruptTimePrecise) {
 
 BOOL SkewedQueryUnbiasedInterruptTime(PULONGLONG UnbiasedTime) {
     log("SkewedQueryUnbiasedInterruptTime");
-    WaitForSingleObject(ghMutex, INFINITE);
     BOOL ret = TrueQueryUnbiasedInterruptTime(UnbiasedTime);
     if (ret == 0) {
-        ReleaseMutex(ghMutex);
         return ret;
     }
+    WaitForSingleObject(ghMutex, INFINITE);
     static ULONGLONG lastTrue = 0;
     static ULONGLONG lastSkewed = 0;
     if (lastTrue == 0) {
@@ -528,8 +526,8 @@ BOOL SkewedQueryUnbiasedInterruptTime(PULONGLONG UnbiasedTime) {
 
 void SkewedQueryUnbiasedInterruptTimePrecise(PULONGLONG lpUnbiasedInterruptTimePrecise) {
     log("SkewedQueryUnbiasedInterruptTimePrecise");
-    WaitForSingleObject(ghMutex, INFINITE);
     TrueQueryUnbiasedInterruptTimePrecise(lpUnbiasedInterruptTimePrecise);
+    WaitForSingleObject(ghMutex, INFINITE);
     static ULONGLONG lastTrue = 0;
     static ULONGLONG lastSkewed = 0;
     if (lastTrue == 0) {
