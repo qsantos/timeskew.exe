@@ -451,6 +451,7 @@ BOOL SkewedQueryPerformanceCounter(LARGE_INTEGER* lpPerformanceCount) {
     WaitForSingleObject(ghMutex, INFINITE);
     BOOL ret = TrueQueryPerformanceCounter(lpPerformanceCount);
     if (ret == 0) {
+        ReleaseMutex(ghMutex);
         return ret;
     }
     static LONGLONG lastTrue = 0;
@@ -509,6 +510,7 @@ BOOL SkewedQueryUnbiasedInterruptTime(PULONGLONG UnbiasedTime) {
     WaitForSingleObject(ghMutex, INFINITE);
     BOOL ret = TrueQueryUnbiasedInterruptTime(UnbiasedTime);
     if (ret == 0) {
+        ReleaseMutex(ghMutex);
         return ret;
     }
     static ULONGLONG lastTrue = 0;
