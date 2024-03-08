@@ -46,9 +46,8 @@ static void(WINAPI* TrueQueryInterruptTimePrecise)(PULONGLONG lpInterruptTimePre
 static BOOL(WINAPI* TrueQueryUnbiasedInterruptTime)(PULONGLONG UnbiasedTime) = QueryUnbiasedInterruptTime;
 static void(WINAPI* TrueQueryUnbiasedInterruptTimePrecise)(PULONGLONG lpUnbiasedInterruptTimePrecise) = QueryUnbiasedInterruptTimePrecise;
 
-// TODO: can we use critical sections instead?
-// TODO: use separate mutexes for separate functions
-HANDLE ghMutex;
+// TODO: use separate CriticalSection for each function
+CRITICAL_SECTION CriticalSection;
 
 static QWORD lastTrueDateTime = 0;
 static QWORD lastSkewedDateTime = 0;
@@ -251,7 +250,7 @@ void SkewedGetSystemTime(LPSYSTEMTIME lpSystemTime) {
     FILETIME fileTime;
     SystemTimeToFileTime(lpSystemTime, &fileTime);
     QWORD dateTime = fileTime.dwHighDateTime * (1ULL << 32) + fileTime.dwLowDateTime;
-    WaitForSingleObject(ghMutex, INFINITE);
+    EnterCriticalSection(&CriticalSection);
     if (lastTrueDateTime == 0) {
         lastTrueDateTime = dateTime;
         lastSkewedDateTime = dateTime;
@@ -263,7 +262,7 @@ void SkewedGetSystemTime(LPSYSTEMTIME lpSystemTime) {
         fileTime.dwLowDateTime = (DWORD) dateTime;
         fileTime.dwHighDateTime = dateTime >> 32;
     }
-    ReleaseMutex(ghMutex);
+    LeaveCriticalSection(&CriticalSection);
     FileTimeToSystemTime(&fileTime, lpSystemTime);
 }
 
@@ -273,7 +272,7 @@ void SkewedGetLocalTime(LPSYSTEMTIME lpSystemTime) {
     TrueGetLocalTime(lpSystemTime);
     FILETIME fileTime;
     SystemTimeToFileTime(lpSystemTime, &fileTime);
-    WaitForSingleObject(ghMutex, INFINITE);
+    EnterCriticalSection(&CriticalSection);
     static QWORD lastLocalTrueDateTime = 0;
     static QWORD lastLocalSkewedDateTime = 0;
     QWORD dateTime = fileTime.dwHighDateTime * (1ULL << 32) + fileTime.dwLowDateTime;
@@ -288,7 +287,7 @@ void SkewedGetLocalTime(LPSYSTEMTIME lpSystemTime) {
         fileTime.dwLowDateTime = (DWORD)dateTime;
         fileTime.dwHighDateTime = dateTime >> 32;
     }
-    ReleaseMutex(ghMutex);
+    LeaveCriticalSection(&CriticalSection);
     FileTimeToSystemTime(&fileTime, lpSystemTime);
 }
 
@@ -297,7 +296,7 @@ void SkewedGetSystemTimeAsFileTime(LPFILETIME lpSystemTimeAsFileTime) {
     log("SkewedGetSystemTimeAsFileTime");
     TrueGetSystemTimeAsFileTime(lpSystemTimeAsFileTime);
     QWORD dateTime = lpSystemTimeAsFileTime->dwHighDateTime * (1ULL << 32) + lpSystemTimeAsFileTime->dwLowDateTime;
-    WaitForSingleObject(ghMutex, INFINITE);
+    EnterCriticalSection(&CriticalSection);
     if (lastTrueDateTime == 0) {
         lastTrueDateTime = dateTime;
         lastSkewedDateTime = dateTime;
@@ -309,7 +308,7 @@ void SkewedGetSystemTimeAsFileTime(LPFILETIME lpSystemTimeAsFileTime) {
         lpSystemTimeAsFileTime->dwLowDateTime = (DWORD)dateTime;
         lpSystemTimeAsFileTime->dwHighDateTime = dateTime >> 32;
     }
-    ReleaseMutex(ghMutex);
+    LeaveCriticalSection(&CriticalSection);
 }
 
 UINT_PTR SkewedSetTimer(HWND hWnd, UINT_PTR nIDEvent, UINT uElapse, TIMERPROC lpTimerFunc) {
@@ -345,12 +344,12 @@ DWORD SkewedWaitForMultipleObjectsEx(DWORD nCount, const HANDLE* lpHandles, BOOL
     return ret;
 }
 
-BOOL SkewedSleepConditionVariableCS(PCONDITION_VARIABLE ConditionVariable, PCRITICAL_SECTION CriticalSection, DWORD dwMilliseconds) {
+BOOL SkewedSleepConditionVariableCS(PCONDITION_VARIABLE ConditionVariable, PCRITICAL_SECTION CriticalSection2, DWORD dwMilliseconds) {
     log("SkewedSleepConditionVariableCS");
     if (dwMilliseconds > 0) {
         dwMilliseconds = dwMilliseconds * denom / num;
     }
-    return TrueSleepConditionVariableCS(ConditionVariable, CriticalSection, dwMilliseconds);
+    return TrueSleepConditionVariableCS(ConditionVariable, CriticalSection2, dwMilliseconds);
 }
 
 BOOL SkewedSleepConditionVariableSRW(PCONDITION_VARIABLE ConditionVariable, PSRWLOCK SRWLock, DWORD dwMilliseconds, ULONG Flags) {
@@ -409,7 +408,7 @@ DWORD SkewedWaitForInputIdle(HANDLE hProcess, DWORD dwMilliseconds) {
 DWORD SkewedGetTickCount() {
     log("SkewedGetTickCount");
     DWORD tickCount = TrueGetTickCount();
-    WaitForSingleObject(ghMutex, INFINITE);
+    EnterCriticalSection(&CriticalSection);
     static DWORD lastTrueTickCount= 0;
     static DWORD lastSkewedTickCount = 0;
     if (lastTrueTickCount == 0) {
@@ -421,14 +420,14 @@ DWORD SkewedGetTickCount() {
         tickCount = lastSkewedTickCount + delta * num / denom;
         lastSkewedTickCount = tickCount;
     }
-    ReleaseMutex(ghMutex);
+    LeaveCriticalSection(&CriticalSection);
     return tickCount;
 }
 
 ULONGLONG SkewedGetTickCount64() {
     log("SkewedGetTickCount64");
     ULONGLONG tickCount = TrueGetTickCount64();
-    WaitForSingleObject(ghMutex, INFINITE);
+    EnterCriticalSection(&CriticalSection);
     static ULONGLONG lastTrueTickCount = 0;
     static ULONGLONG lastSkewedTickCount = 0;
     if (lastTrueTickCount == 0) {
@@ -440,7 +439,7 @@ ULONGLONG SkewedGetTickCount64() {
         tickCount = lastSkewedTickCount + delta * num / denom;
         lastSkewedTickCount = tickCount;
     }
-    ReleaseMutex(ghMutex);
+    LeaveCriticalSection(&CriticalSection);
     return tickCount;
 }
 
@@ -450,7 +449,7 @@ BOOL SkewedQueryPerformanceCounter(LARGE_INTEGER* lpPerformanceCount) {
     if (ret == 0) {
         return ret;
     }
-    WaitForSingleObject(ghMutex, INFINITE);
+    EnterCriticalSection(&CriticalSection);
     static LONGLONG lastTrue = 0;
     static LONGLONG lastSkewed = 0;
     if (lastTrue == 0) {
@@ -462,14 +461,14 @@ BOOL SkewedQueryPerformanceCounter(LARGE_INTEGER* lpPerformanceCount) {
         lpPerformanceCount->QuadPart = lastSkewed + delta * num / denom;
         lastSkewed = lpPerformanceCount->QuadPart;
     }
-    ReleaseMutex(ghMutex);
+    LeaveCriticalSection(&CriticalSection);
     return ret;
 }
 
 void SkewedQueryInterruptTime(PULONGLONG lpInterruptTime) {
     log("SkewedQueryInterruptTime");
     TrueQueryInterruptTime(lpInterruptTime);
-    WaitForSingleObject(ghMutex, INFINITE);
+    EnterCriticalSection(&CriticalSection);
     static ULONGLONG lastTrue = 0;
     static ULONGLONG lastSkewed = 0;
     if (lastTrue == 0) {
@@ -481,13 +480,13 @@ void SkewedQueryInterruptTime(PULONGLONG lpInterruptTime) {
         *lpInterruptTime = lastSkewed + delta * num / denom;
         lastSkewed = *lpInterruptTime;
     }
-    ReleaseMutex(ghMutex);
+    LeaveCriticalSection(&CriticalSection);
 }
 
 void SkewedQueryInterruptTimePrecise(PULONGLONG lpInterruptTimePrecise) {
     log("SkewedQueryInterruptTimePrecise");
     TrueQueryInterruptTimePrecise(lpInterruptTimePrecise);
-    WaitForSingleObject(ghMutex, INFINITE);
+    EnterCriticalSection(&CriticalSection);
     static ULONGLONG lastTrue = 0;
     static ULONGLONG lastSkewed = 0;
     if (lastTrue == 0) {
@@ -499,7 +498,7 @@ void SkewedQueryInterruptTimePrecise(PULONGLONG lpInterruptTimePrecise) {
         *lpInterruptTimePrecise = lastSkewed + delta * num / denom;
         lastSkewed = *lpInterruptTimePrecise;
     }
-    ReleaseMutex(ghMutex);
+    LeaveCriticalSection(&CriticalSection);
 }
 
 BOOL SkewedQueryUnbiasedInterruptTime(PULONGLONG UnbiasedTime) {
@@ -508,7 +507,7 @@ BOOL SkewedQueryUnbiasedInterruptTime(PULONGLONG UnbiasedTime) {
     if (ret == 0) {
         return ret;
     }
-    WaitForSingleObject(ghMutex, INFINITE);
+    EnterCriticalSection(&CriticalSection);
     static ULONGLONG lastTrue = 0;
     static ULONGLONG lastSkewed = 0;
     if (lastTrue == 0) {
@@ -520,14 +519,14 @@ BOOL SkewedQueryUnbiasedInterruptTime(PULONGLONG UnbiasedTime) {
         *UnbiasedTime = lastSkewed + delta * num / denom;
         lastSkewed = *UnbiasedTime;
     }
-    ReleaseMutex(ghMutex);
+    LeaveCriticalSection(&CriticalSection);
     return ret;
 }
 
 void SkewedQueryUnbiasedInterruptTimePrecise(PULONGLONG lpUnbiasedInterruptTimePrecise) {
     log("SkewedQueryUnbiasedInterruptTimePrecise");
     TrueQueryUnbiasedInterruptTimePrecise(lpUnbiasedInterruptTimePrecise);
-    WaitForSingleObject(ghMutex, INFINITE);
+    EnterCriticalSection(&CriticalSection);
     static ULONGLONG lastTrue = 0;
     static ULONGLONG lastSkewed = 0;
     if (lastTrue == 0) {
@@ -539,7 +538,7 @@ void SkewedQueryUnbiasedInterruptTimePrecise(PULONGLONG lpUnbiasedInterruptTimeP
         *lpUnbiasedInterruptTimePrecise = lastSkewed + delta * num / denom;
         lastSkewed = *lpUnbiasedInterruptTimePrecise;
     }
-    ReleaseMutex(ghMutex);
+    LeaveCriticalSection(&CriticalSection);
 }
 
 BOOL WINAPI DllMain(HINSTANCE hinst, DWORD dwReason, LPVOID reserved) {
@@ -549,15 +548,14 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD dwReason, LPVOID reserved) {
         return TRUE;
     }
 
-    // Create Mutex
-    ghMutex = CreateMutex(NULL, FALSE, NULL);
-    if (ghMutex == NULL) {
-        fprintf(stderr, "CreateMutex error: %ld\n", GetLastError());
-        return 1;
-    }
-
     // Replace/restore time-related functions
     if (dwReason == DLL_PROCESS_ATTACH) {
+        // Create CriticalSection
+        if (!InitializeCriticalSectionAndSpinCount(&CriticalSection, 1024) ) {
+            fprintf(stderr, "InitializeCriticalSectionAndSpinCount error: %ld\n", GetLastError());
+            exit(1);
+        }
+
         init_logging();
         init_timeskew();
         init_server();
