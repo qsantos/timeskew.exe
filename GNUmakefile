@@ -1,4 +1,4 @@
-SRCD = Detours\src
+SRCD = Detours/src
 OBJ = creatwth.o detours.o disasm.o modules.o
 
 all: timeskew.zip
