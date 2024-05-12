@@ -14,4 +14,4 @@ jobs:
           submodules: true
       - uses: ilammy/msvc-dev-cmd@v1
       - name: Build
-        run: nmake
+        run: nmake /nologo
