@@ -1,4 +1,5 @@
 from math import isclose
+from os import environ
 from subprocess import Popen, PIPE
 from sys import executable
 from time import time
@@ -23,7 +24,7 @@ overhead = real_elapsed - fake_elapsed
 assert overhead >= 0.010
 
 # Test time acceleration with environment-variables
-p = Popen(COMMAND, stdout=PIPE, env={"TIMESKEW": "10 1"})
+p = Popen(COMMAND, stdout=PIPE, env={"TIMESKEW": "10 1", **environ})
 start = time()
 p.wait()
 real_elapsed = time() - start
@@ -32,7 +33,7 @@ assert isclose(real_elapsed - overhead, SLEEP_DURATION / 10, rel_tol=TOLERANCE)
 assert isclose(fake_elapsed, SLEEP_DURATION, rel_tol=TOLERANCE)
 
 # Test time slow-down with environment-variables
-p = Popen(COMMAND, stdout=PIPE, env={"TIMESKEW": "1 10"})
+p = Popen(COMMAND, stdout=PIPE, env={"TIMESKEW": "1 10", **environ})
 start = time()
 p.wait()
 real_elapsed = time() - start
