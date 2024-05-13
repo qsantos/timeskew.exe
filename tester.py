@@ -9,34 +9,43 @@ from testee import SLEEP_DURATION
 
 COMMAND = ["./timeskew.exe", executable, "testee.py"]
 TOLERANCE = 0.05
+print(f'{SLEEP_DURATION=}')
+print(f'{TOLERANCE=}')
 
-# Measure the actual time to run the testee.py to account for overhead
+print('Measure the actual time to run the testee.py to account for overhead')
 p = Popen(COMMAND, stdout=PIPE)
 start = time()
 p.wait()
 real_elapsed = time() - start
 fake_elapsed = float(p.stdout.read().decode())
+print(f'{real_elapsed=}')
+print(f'{fake_elapsed=}')
 # It should still be pretty close to 1
 assert isclose(real_elapsed, SLEEP_DURATION, rel_tol=TOLERANCE)
 assert isclose(fake_elapsed, SLEEP_DURATION, rel_tol=TOLERANCE)
 # Count overhead as the difference between the two
 overhead = real_elapsed - fake_elapsed
+print(f'{overhead=}')
 assert overhead >= 0.010
 
-# Test time acceleration with environment-variables
+print('Test time acceleration with environment-variables')
 p = Popen(COMMAND, stdout=PIPE, env={"TIMESKEW": "10 1", **environ})
 start = time()
 p.wait()
 real_elapsed = time() - start
 fake_elapsed = float(p.stdout.read().decode())
+print(f'{real_elapsed=}')
+print(f'{fake_elapsed=}')
 assert isclose(real_elapsed - overhead, SLEEP_DURATION / 10, rel_tol=TOLERANCE)
 assert isclose(fake_elapsed, SLEEP_DURATION, rel_tol=TOLERANCE)
 
-# Test time slow-down with environment-variables
+print('Test time slow-down with environment-variables')
 p = Popen(COMMAND, stdout=PIPE, env={"TIMESKEW": "1 10", **environ})
 start = time()
 p.wait()
 real_elapsed = time() - start
 fake_elapsed = float(p.stdout.read().decode())
+print(f'{real_elapsed=}')
+print(f'{fake_elapsed=}')
 assert isclose(real_elapsed - overhead, SLEEP_DURATION * 10, rel_tol=TOLERANCE)
 assert isclose(fake_elapsed, SLEEP_DURATION, rel_tol=TOLERANCE)
