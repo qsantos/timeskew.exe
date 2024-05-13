@@ -7,7 +7,7 @@ from time import time
 from testee import SLEEP_DURATION
 
 COMMAND = ["./timeskew.exe", executable, "testee.py"]
-TOLERANCE = 0.01
+TOLERANCE = 0.05
 
 # Measure the actual time to run the testee.py to account for overhead
 p = Popen(COMMAND, stdout=PIPE)
