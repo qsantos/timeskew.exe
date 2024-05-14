@@ -1,8 +1,8 @@
 Using 'test.log' for logging
 SkewedGetSystemTimeAsFileTime
 SkewedGetSystemTimeAsFileTime
-SkewedSetWaitableTimerEx(-100000000, 0)
-TrueSetWaitableTimerEx(-100000000)
+SkewedSetWaitableTimerEx(-10000000, 0)
+TrueSetWaitableTimerEx(-10000000)
 SkewedWaitForMultipleObjectsEx(2, -1 ms)
 SkewedWaitForMultipleObjectsEx done
 SkewedGetSystemTimeAsFileTime
@@ -10,8 +10,8 @@ Using 'test.log' for logging
 setting timeskew to 10 1
 SkewedGetSystemTimeAsFileTime
 SkewedGetSystemTimeAsFileTime
-SkewedSetWaitableTimerEx(-100000000, 0)
-TrueSetWaitableTimerEx(-10000000)
+SkewedSetWaitableTimerEx(-10000000, 0)
+TrueSetWaitableTimerEx(-1000000)
 SkewedWaitForMultipleObjectsEx(2, -1 ms)
 SkewedWaitForMultipleObjectsEx done
 SkewedGetSystemTimeAsFileTime
@@ -19,8 +19,8 @@ Using 'test.log' for logging
 setting timeskew to 1 10
 SkewedGetSystemTimeAsFileTime
 SkewedGetSystemTimeAsFileTime
-SkewedSetWaitableTimerEx(-100000000, 0)
-TrueSetWaitableTimerEx(-1000000000)
+SkewedSetWaitableTimerEx(-10000000, 0)
+TrueSetWaitableTimerEx(-100000000)
 SkewedWaitForMultipleObjectsEx(2, -1 ms)
 SkewedWaitForMultipleObjectsEx done
 SkewedGetSystemTimeAsFileTime
