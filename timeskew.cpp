@@ -69,8 +69,8 @@ void log(const char* format, ...) {
 
 bool read_envvar(const char* envvar, char* buf, DWORD n) {
     int res = GetEnvironmentVariable(envvar, buf, n);
-    if (res >= sizeof buf) {
-        log("The value in %s envvar is too long", envvar);
+    if (res >= n) {
+        log("The value in %s envvar is too long (%zu >= %zu)", envvar, res, n);
         exit(1);
     } else if (res > 0) {
         return TRUE;
