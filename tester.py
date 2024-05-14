@@ -23,7 +23,7 @@ except FileNotFoundError:
     pass
 environ["TIMESKEW_LOGFILE"] = LOGFILE
 
-print('Measure the actual time to run the testee.py to account for overhead')
+print('Test with no time acceleration')
 p = Popen(COMMAND, stdin=PIPE, stdout=PIPE)
 sleep(.1)
 p.stdin.write(b'\n')
@@ -37,10 +37,6 @@ print(f'{fake_elapsed=}')
 # It should still be pretty close to 1
 assert isclose(real_elapsed, SLEEP_DURATION, rel_tol=TOLERANCE)
 assert isclose(fake_elapsed, SLEEP_DURATION, rel_tol=TOLERANCE)
-# Count overhead as the difference between the two
-overhead = real_elapsed - fake_elapsed
-print(f'{overhead=}')
-assert overhead >= 0.001
 
 print('Test time acceleration with environment-variables')
 p = Popen(COMMAND, stdin=PIPE, stdout=PIPE, env={"TIMESKEW": "10 1", **environ})
@@ -53,7 +49,7 @@ real_elapsed = time() - start
 fake_elapsed = float(p.stdout.read().decode())
 print(f'{real_elapsed=}')
 print(f'{fake_elapsed=}')
-assert isclose(real_elapsed - overhead, SLEEP_DURATION / 10, rel_tol=TOLERANCE)
+assert isclose(real_elapsed, SLEEP_DURATION / 10, rel_tol=TOLERANCE)
 assert isclose(fake_elapsed, SLEEP_DURATION, rel_tol=TOLERANCE)
 
 print('Test time slow-down with environment-variables')
@@ -67,7 +63,7 @@ real_elapsed = time() - start
 fake_elapsed = float(p.stdout.read().decode())
 print(f'{real_elapsed=}')
 print(f'{fake_elapsed=}')
-assert isclose(real_elapsed - overhead, SLEEP_DURATION * 10, rel_tol=TOLERANCE)
+assert isclose(real_elapsed , SLEEP_DURATION * 10, rel_tol=TOLERANCE)
 assert isclose(fake_elapsed, SLEEP_DURATION, rel_tol=TOLERANCE)
 
 print('Test time acceleration with port')
@@ -84,7 +80,7 @@ real_elapsed = time() - start
 fake_elapsed = float(p.stdout.read().decode())
 print(f'{real_elapsed=}')
 print(f'{fake_elapsed=}')
-assert isclose(real_elapsed - overhead, SLEEP_DURATION / 10, rel_tol=TOLERANCE)
+assert isclose(real_elapsed, SLEEP_DURATION / 10, rel_tol=TOLERANCE)
 assert isclose(fake_elapsed, SLEEP_DURATION, rel_tol=TOLERANCE)
 
 print('Test time slow-down with port')
@@ -101,7 +97,7 @@ real_elapsed = time() - start
 fake_elapsed = float(p.stdout.read().decode())
 print(f'{real_elapsed=}')
 print(f'{fake_elapsed=}')
-assert isclose(real_elapsed - overhead, SLEEP_DURATION * 10, rel_tol=TOLERANCE)
+assert isclose(real_elapsed, SLEEP_DURATION * 10, rel_tol=TOLERANCE)
 assert isclose(fake_elapsed, SLEEP_DURATION, rel_tol=TOLERANCE)
 
 assert filecmp.cmp(LOGFILE, EXPECTED)
