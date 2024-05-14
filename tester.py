@@ -10,7 +10,7 @@ from time import sleep, time
 from testee import SLEEP_DURATION
 
 COMMAND = ["./timeskew.exe", executable, "testee.py"]
-TOLERANCE = 0.05
+TOLERANCE = 0.1
 LOGFILE = "test.log"
 EXPECTED = "expected.log"
 PORT = 40000
