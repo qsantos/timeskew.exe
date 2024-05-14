@@ -24,6 +24,10 @@ except FileNotFoundError:
 environ["TIMESKEW_LOGFILE"] = LOGFILE
 
 
+def run_testee_with_env(**env: str) -> Popen:
+    return Popen(COMMAND, stdin=PIPE, stdout=PIPE, env={**env, **environ})
+
+
 def test_relative_time(p: Popen, time_ratio: float) -> None:
     sleep(.1)
     p.stdin.write(b'\n')
@@ -40,26 +44,26 @@ def test_relative_time(p: Popen, time_ratio: float) -> None:
 
 
 print('Test with no time acceleration')
-p = Popen(COMMAND, stdin=PIPE, stdout=PIPE)
+p = run_testee_with_env()
 test_relative_time(p, 1)
 
 print('Test time acceleration with environment-variables')
-p = Popen(COMMAND, stdin=PIPE, stdout=PIPE, env={"TIMESKEW": "10 1", **environ})
+p = run_testee_with_env(TIMESKEW="10 1")
 test_relative_time(p, 10)
 
 print('Test time slow-down with environment-variables')
-p = Popen(COMMAND, stdin=PIPE, stdout=PIPE, env={"TIMESKEW": "1 10", **environ})
+p = run_testee_with_env(TIMESKEW="1 10")
 test_relative_time(p, .1)
 
 print('Test time acceleration with port')
-p = Popen(COMMAND, stdin=PIPE, stdout=PIPE, env={"TIMESKEW_PORT": str(PORT), **environ})
+p = run_testee_with_env(TIMESKEW_PORT=str(PORT))
 sleep(.1)
 with create_connection(('127.0.0.1', PORT)) as sock:
     sock.sendall(b"10 1\n")
 test_relative_time(p, 10)
 
 print('Test time slow-down with port')
-p = Popen(COMMAND, stdin=PIPE, stdout=PIPE, env={"TIMESKEW_PORT": str(PORT), **environ})
+p = run_testee_with_env(TIMESKEW_PORT=str(PORT))
 sleep(.1)
 with create_connection(('127.0.0.1', PORT)) as sock:
     sock.sendall(b"1 10\n")
