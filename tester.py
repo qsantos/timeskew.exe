@@ -1,5 +1,6 @@
+import filecmp
 from math import isclose
-from os import environ
+from os import environ, remove
 from subprocess import Popen, PIPE
 from sys import executable
 from time import time
@@ -9,8 +10,16 @@ from testee import SLEEP_DURATION
 
 COMMAND = ["./timeskew.exe", executable, "testee.py"]
 TOLERANCE = 0.05
+LOGFILE = "test.log"
+EXPECTED = "expected.log"
 print(f'{SLEEP_DURATION=}')
 print(f'{TOLERANCE=}')
+
+try:
+    remove(LOGFILE)
+except FileNotFoundError:
+    pass
+environ["TIMESKEW_LOGFILE"] = LOGFILE
 
 print('Measure the actual time to run the testee.py to account for overhead')
 p = Popen(COMMAND, stdout=PIPE)
@@ -49,3 +58,5 @@ print(f'{real_elapsed=}')
 print(f'{fake_elapsed=}')
 assert isclose(real_elapsed - overhead, SLEEP_DURATION * 10, rel_tol=TOLERANCE)
 assert isclose(fake_elapsed, SLEEP_DURATION, rel_tol=TOLERANCE)
+
+filecmp.cmp(LOGFILE, EXPECTED)
