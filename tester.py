@@ -1,6 +1,5 @@
-import filecmp
 from math import isclose
-from os import environ, remove
+from os import environ
 from socket import create_connection
 from subprocess import Popen, PIPE
 from sys import executable
@@ -11,17 +10,10 @@ from testee import SLEEP_DURATION
 
 COMMAND = ["./timeskew.exe", executable, "testee.py"]
 TOLERANCE = 0.1
-LOGFILE = "test.log"
 EXPECTED = "expected.log"
 PORT = 40000
 print(f'{SLEEP_DURATION=}')
 print(f'{TOLERANCE=}')
-
-try:
-    remove(LOGFILE)
-except FileNotFoundError:
-    pass
-environ["TIMESKEW_LOGFILE"] = LOGFILE
 
 
 def run_testee_with_env(**env: str) -> Popen:
@@ -68,10 +60,3 @@ sleep(.1)
 with create_connection(('127.0.0.1', PORT)) as sock:
     sock.sendall(b"1 10\n")
 test_relative_time(p, .1)
-
-if not filecmp.cmp(LOGFILE, EXPECTED):
-    print('The logfile contains:')
-    print('=' * 50)
-    with open(LOGFILE) as f:
-        print(f.read())
-    print('=' * 50)
