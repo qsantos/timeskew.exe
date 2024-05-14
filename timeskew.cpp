@@ -189,7 +189,7 @@ DWORD WINAPI server(LPVOID lpParam) {
                 // Receive data
                 char recvbuf[100];
                 res = recv(clientSockets[i], recvbuf, sizeof recvbuf - 1, 0);
-                if (res < 0) {
+                if (res <= 0) {
                     // Close socket
                     FD_CLR(clientSockets[i], &readfdsInput);
                     closesocket(clientSockets[i]);
@@ -200,7 +200,7 @@ DWORD WINAPI server(LPVOID lpParam) {
                     i -= 1; // NOTE: i is signed
                     continue;
                 }
-                // NOTE: 0 <= res < sizeof recvbuf
+                // NOTE: 0 < res < sizeof recvbuf
                 recvbuf[res] = 0;
                 parse_timeskew(recvbuf);
             }
