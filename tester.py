@@ -15,7 +15,7 @@ print(f'{TOLERANCE=}')
 print('Measure the actual time to run the testee.py to account for overhead')
 p = Popen(COMMAND, stdout=PIPE)
 start = time()
-p.wait()
+assert p.wait() == 0
 real_elapsed = time() - start
 fake_elapsed = float(p.stdout.read().decode())
 print(f'{real_elapsed=}')
@@ -31,7 +31,7 @@ assert overhead >= 0.010
 print('Test time acceleration with environment-variables')
 p = Popen(COMMAND, stdout=PIPE, env={"TIMESKEW": "10 1", **environ})
 start = time()
-p.wait()
+assert p.wait() == 0
 real_elapsed = time() - start
 fake_elapsed = float(p.stdout.read().decode())
 print(f'{real_elapsed=}')
@@ -42,7 +42,7 @@ assert isclose(fake_elapsed, SLEEP_DURATION, rel_tol=TOLERANCE)
 print('Test time slow-down with environment-variables')
 p = Popen(COMMAND, stdout=PIPE, env={"TIMESKEW": "1 10", **environ})
 start = time()
-p.wait()
+assert p.wait() == 0
 real_elapsed = time() - start
 fake_elapsed = float(p.stdout.read().decode())
 print(f'{real_elapsed=}')
