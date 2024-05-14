@@ -69,4 +69,9 @@ with create_connection(('127.0.0.1', PORT)) as sock:
     sock.sendall(b"1 10\n")
 test_relative_time(p, .1)
 
-assert filecmp.cmp(LOGFILE, EXPECTED)
+if not filecmp.cmp(LOGFILE, EXPECTED):
+    print('The logfile contains:')
+    print('=' * 50)
+    with open(LOGFILE) as f:
+        print(f.read())
+    print('=' * 50)
