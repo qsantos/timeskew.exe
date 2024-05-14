@@ -68,4 +68,4 @@ print(f'{fake_elapsed=}')
 assert isclose(real_elapsed - overhead, SLEEP_DURATION * 10, rel_tol=TOLERANCE)
 assert isclose(fake_elapsed, SLEEP_DURATION, rel_tol=TOLERANCE)
 
-filecmp.cmp(LOGFILE, EXPECTED)
+assert filecmp.cmp(LOGFILE, EXPECTED)
