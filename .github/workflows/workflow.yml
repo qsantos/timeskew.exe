@@ -26,4 +26,4 @@ jobs:
       - name: Install cppcheck
         run: sudo apt-get install -y cppcheck
       - name: Run cppcheck
-        run: cppcheck --enable=all --inline-suppr *.cpp
+        run: cppcheck --enable=all --inline-suppr -I Detours/src --suppress=missingIncludeSystem --force *.cpp
