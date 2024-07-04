@@ -276,6 +276,10 @@ void SkewedGetLocalTime(LPSYSTEMTIME lpSystemTime) {
     static QWORD lastLocalTrueDateTime = 0;
     static QWORD lastLocalSkewedDateTime = 0;
     QWORD dateTime = fileTime.dwHighDateTime * (1ULL << 32) + fileTime.dwLowDateTime;
+    // cppcheck mistakenly believew that the following condition is always
+    // true; however, lastLocalTrueDateTime is a static variable that is
+    // modified later
+    // cppcheck-suppress knownConditionTrueFalse
     if (lastLocalTrueDateTime == 0) {
         lastLocalTrueDateTime = dateTime;
         lastLocalSkewedDateTime = dateTime;
