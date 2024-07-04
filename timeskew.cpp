@@ -220,11 +220,11 @@ void init_server() {
 
 int SkewedSelect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, const timeval *timeout) {
     timeval *timeout2;
+    timeval skewedTimeout;
     if (timeout == NULL) {
         timeout2 = NULL;
     } else {
         static const ULONGLONG usecs_per_sec = 1000000ULL;
-        timeval skewedTimeout;
         ULONGLONG usecs = timeout->tv_sec * usecs_per_sec + timeout->tv_usec;
         usecs = usecs * denom / num;
         skewedTimeout.tv_sec = (LONG) (usecs / usecs_per_sec);
