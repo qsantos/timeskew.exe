@@ -545,6 +545,8 @@ void SkewedQueryUnbiasedInterruptTimePrecise(PULONGLONG lpUnbiasedInterruptTimeP
     LeaveCriticalSection(&CriticalSection);
 }
 
+// this is the entry point, of course it's used!
+// cppcheck-suppress unusedFunction
 BOOL WINAPI DllMain(HINSTANCE hinst, DWORD dwReason, LPVOID reserved) {
     (void) hinst;
     (void) reserved;
