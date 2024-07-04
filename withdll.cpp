@@ -14,7 +14,7 @@ struct ExportContext {
 static BOOL CALLBACK ExportCallback(_In_opt_ PVOID pContext, _In_ ULONG nOrdinal, _In_opt_ LPCSTR pszSymbol, _In_opt_ PVOID pbTarget) {
     (void)pbTarget;
     (void)pszSymbol;
-    ExportContext *pec = (ExportContext *)pContext;
+    ExportContext *pec = static_cast<ExportContext *>(pContext);
     if (nOrdinal == 1) {
         pec->fHasOrdinal1 = TRUE;
     }
